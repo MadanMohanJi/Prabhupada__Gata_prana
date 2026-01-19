@@ -1,5 +1,6 @@
 {
   "name": "bhakti-audio",
+  "homepage": "https://github.com/MadanMohanJi/Prabhupada__Gata_prana.git",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -7,6 +8,9 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
+    "firebase": "^12.8.0",
+    "gh-pages": "^6.3.0",
+    "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-scripts": "5.0.1",
@@ -16,7 +20,10 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+
   },
   "eslintConfig": {
     "extends": [
