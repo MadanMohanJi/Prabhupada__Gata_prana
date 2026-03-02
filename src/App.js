@@ -19,16 +19,17 @@ import {
 } from 'firebase/auth';
 
 // --- 1. CONFIGURATION ---
-const apiKey = "AIzaSyAcHOFWBtwwLG5fn3mJQtpy2ps7fHMTW6E"; // The execution environment provides this key automatically
+// Keys are pulled securely from your .env file
+const apiKey = process.env.REACT_APP_GEMINI_API_KEY || "YOUR_GEMINI_API_KEY_HERE"; 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBcNR9PtQwO6V13CTaP0rRq8UEnEKuF2yQ",
-  authDomain: "prasadam-coupon.firebaseapp.com",
-  projectId: "prasadam-coupon",
-  storageBucket: "prasadam-coupon.firebasestorage.app",
-  messagingSenderId: "994864083790",
-  appId: "1:994864083790:web:8299762f50724b45afa41f",
-  measurementId: "G-8Z5FE1N65E"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "YOUR_FIREBASE_API_KEY_HERE",
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "prasadam-coupon.firebaseapp.com",
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "prasadam-coupon",
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "prasadam-coupon.firebasestorage.app",
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "994864083790",
+  appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:994864083790:web:8299762f50724b45afa41f",
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || "G-8Z5FE1N65E"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -162,22 +163,18 @@ export default function App() {
   // --- HELPER: Localized Text ---
   const getLocalized = (item, field) => {
     if (!item) return "";
-    if (lang === 'hi' && item[`${field}_hi`]) {
-        return String(item[`${field}_hi`]);
-    }
-    return String(item[field] || "");
+    const val = (lang === 'hi' && item[`${field}_hi`]) ? item[`${field}_hi`] : item[field];
+    return val || ""; 
   };
 
-  // --- HELPER: Get YouTube ID (Strict & Clean) ---
+  // --- HELPER: Get YouTube ID ---
   const getYoutubeId = (urlInput) => {
     if (!urlInput) return null;
     let url = urlInput;
-    // Extract src from iframe tag if pasted
     if (urlInput.includes('<iframe')) {
         const srcMatch = urlInput.match(/src="([^"]+)"/);
         if (srcMatch && srcMatch[1]) url = srcMatch[1];
     }
-    // Regex for ID
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     if (match && match[2].length === 11) return match[2];
@@ -185,15 +182,13 @@ export default function App() {
     return null;
   };
 
-  // --- HELPER: Optimized URL (Thumbnails & Drive) ---
+  // --- HELPER: Optimized URL ---
   const getOptimizedUrl = (url, type, item) => {
     if (!url) return "";
-    // 1. YouTube Thumbnails
     if (type === 'video_thumb' || (item && item.type === 'video')) {
         const id = getYoutubeId(url);
         if (id) return `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
     }
-    // 2. Drive Links
     if (url.includes('drive.google.com')) {
         const idMatch = url.match(/\/d\/(.*?)\/|id=(.*?)(&|$)/);
         const id = idMatch ? (idMatch[1] || idMatch[2]) : null;
@@ -277,16 +272,13 @@ export default function App() {
     return items;
   }, [appSettings]);
 
-  // --- ADVANCED GEMINI AI LOGIC (With Google Search) ---
+  // --- ADVANCED GEMINI AI LOGIC ---
   const handleAiSubmit = async (queryOverride = null) => {
     const query = queryOverride || aiInput;
     if (!query.trim()) return;
     
-    // CRITICAL: Ensure we target the currently active item (Visual > Audio)
     const newItem = activeVisual || currentTrack;
-    
     const contextTitle = getLocalized(newItem, 'title');
-    // Prepare prompt with fallback to search
     const transcript = getLocalized(newItem, 'transcription') || newItem.description || getLocalized(newItem, 'lyricsText') || "No text available. Please use Google Search.";
     
     const userMsg = { role: 'user', text: query };
@@ -305,16 +297,18 @@ export default function App() {
       2. If the content is missing or unrelated, use the 'google_search' tool to find the specific lecture/video details online.
       3. Provide a concise, spiritual answer.`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             contents: [{ parts: [{ text: query }] }],
             systemInstruction: { parts: [{ text: systemPrompt }] },
-            // ENABLE GOOGLE SEARCH GROUNDING
             tools: [{ google_search: {} }] 
         })
       });
+
+      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
       const data = await response.json();
       
       let aiText = "Sorry, I cannot answer right now.";
@@ -325,7 +319,7 @@ export default function App() {
       setAiChat(prev => [...prev, { role: 'model', text: aiText }]);
     } catch (error) {
       console.error("AI Error", error);
-      setAiChat(prev => [...prev, { role: 'model', text: "Connection error. Please try again." }]);
+      setAiChat(prev => [...prev, { role: 'model', text: "Connection error. Please check your internet or try again." }]);
     } finally {
       setIsAiLoading(false);
       setTimeout(() => chatContainerRef.current?.scrollTo({ top: 9999, behavior: 'smooth' }), 100);
@@ -367,8 +361,12 @@ export default function App() {
     const onTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
       setProgress((audio.currentTime / audio.duration) * 100 || 0);
-      if(Math.floor(audio.currentTime) % 5 === 0) localStorage.setItem('bcs_last_time', audio.currentTime);
-      if (user && currentTrack && Math.floor(audio.currentTime) % 5 === 0 && audio.currentTime > 5) {
+      
+      if(Math.floor(audio.currentTime) % 5 === 0) {
+        localStorage.setItem('bcs_last_time', audio.currentTime);
+      }
+      
+      if (user && currentTrack && Math.floor(audio.currentTime) % 30 === 0 && audio.currentTime > 5) {
          setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'progress', currentTrack.id), { lastTime: audio.currentTime, updatedAt: new Date().toISOString() }, { merge: true });
       }
     };
@@ -491,7 +489,6 @@ export default function App() {
   const renderFullScreenModal = () => {
     if (!activeModal) return null;
     
-    // Determine which item is active (Video takes precedence)
     const item = activeVisual || currentTrack;
     
     if (!item) return null;
