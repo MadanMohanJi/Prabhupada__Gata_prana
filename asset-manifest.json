@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/Prabhupada__Gata_prana/static/css/main.cac82b6a.css",
-    "main.js": "/Prabhupada__Gata_prana/static/js/main.a3bc984b.js",
+    "main.js": "/Prabhupada__Gata_prana/static/js/main.57047890.js",
     "static/js/453.647e973b.chunk.js": "/Prabhupada__Gata_prana/static/js/453.647e973b.chunk.js",
     "index.html": "/Prabhupada__Gata_prana/index.html",
     "main.cac82b6a.css.map": "/Prabhupada__Gata_prana/static/css/main.cac82b6a.css.map",
-    "main.a3bc984b.js.map": "/Prabhupada__Gata_prana/static/js/main.a3bc984b.js.map",
+    "main.57047890.js.map": "/Prabhupada__Gata_prana/static/js/main.57047890.js.map",
     "453.647e973b.chunk.js.map": "/Prabhupada__Gata_prana/static/js/453.647e973b.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.cac82b6a.css",
-    "static/js/main.a3bc984b.js"
+    "static/js/main.57047890.js"
   ]
 }
